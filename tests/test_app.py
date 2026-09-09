@@ -1,4 +1,11 @@
+import sys
+from pathlib import Path
+
 import pytest
+
+# Add the project root to Python's import path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from app import app, init_db
 
 @pytest.fixture
