@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Menu{% endblock %}
+{% block content %}<div class="d-flex justify-content-between align-items-center mb-4">
+<div><h1 class="fw-bold">Today's Menu</h1><p class="text-muted mb-0">Choose your food. Ordering functionality is coming next.</p></div></div>
+<div class="row g-4">{% for item in items %}<div class="col-md-6 col-lg-4"><div class="card h-100 shadow-sm"><div class="card-body">
+<div class="d-flex justify-content-between"><h4>{{ item["item_name"] }}</h4>{% if item["available"] %}<span class="badge text-bg-success">Available</span>{% else %}<span class="badge text-bg-secondary">Unavailable</span>{% endif %}</div>
+<p class="fs-5 fw-bold mt-3">₹{{ "%.2f"|format(item["price"]) }}</p><p class="text-muted mb-0">Preparation: ~{{ item["preparation_time"] }} min</p>
+</div></div></div>{% endfor %}</div>{% endblock %}
