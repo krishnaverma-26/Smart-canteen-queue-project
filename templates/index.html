@@ -1,17 +1,32 @@
 {% extends "base.html" %}
-{% block title %}Smart Canteen Queue{% endblock %}
+{% block title %}Smart Canteen | Order smarter{% endblock %}
 {% block content %}
-<section class="hero p-5 rounded-4"><div class="row align-items-center">
-<div class="col-lg-7"><span class="badge text-bg-warning mb-3">College Canteen</span>
-<h1 class="display-4 fw-bold">Skip the crowd. Track your order.</h1>
-<p class="lead mt-3">Order food digitally, receive a token, and see your queue position without standing at the counter.</p>
-<div class="mt-4 d-flex gap-2 flex-wrap"><a href="{{ url_for('register') }}" class="btn btn-warning btn-lg">Get Started</a><a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">Login</a></div></div>
-<div class="col-lg-5 mt-4 mt-lg-0"><div class="queue-card">
-<p class="text-muted mb-1">Your Digital Token</p><div class="token">#47</div><p class="mb-1">People ahead: <strong>5</strong></p><p class="mb-0">Estimated wait: <strong>~10 min</strong></p>
-</div></div></div></section>
-<div class="row g-4 mt-4">
-<div class="col-md-4"><div class="card h-100 p-3"><div class="card-body"><h4>📋 Digital Menu</h4><p class="text-muted">Browse available food items and prices before ordering.</p></div></div></div>
-<div class="col-md-4"><div class="card h-100 p-3"><div class="card-body"><h4>🎟 Digital Token</h4><p class="text-muted">Get a unique token automatically after placing an order.</p></div></div></div>
-<div class="col-md-4"><div class="card h-100 p-3"><div class="card-body"><h4>⏱ Queue Tracking</h4><p class="text-muted">Check order status, queue position and estimated wait time.</p></div></div></div>
+<section class="hero-section"><div class="container"><div class="row align-items-center g-5">
+<div class="col-lg-7">
+<div class="eyebrow"><span class="live-dot"></span> Live canteen ordering</div>
+<h1>Order smart.<br><span>Skip the queue.</span></h1>
+<p class="hero-copy">Browse the menu, place your order, receive a digital token, and track your food from your phone.</p>
+<div class="hero-actions"><a href="{{ url_for('register') }}" class="btn btn-primary-custom btn-lg">Start ordering <span class="arrow">→</span></a><a href="{{ url_for('login') }}" class="btn btn-light-custom btn-lg">Log in</a></div>
+<div class="hero-note"><span>✓</span> Simple ordering &nbsp;&nbsp; <span>✓</span> Digital tokens &nbsp;&nbsp; <span>✓</span> Queue tracking</div>
 </div>
+<div class="col-lg-5"><div class="queue-panel">
+<div class="panel-top"><div><span class="panel-label">LIVE QUEUE</span><h3>Current status</h3></div><span class="status-pill"><span></span> Open</span></div>
+<div class="token-display"><div class="token-label">NOW SERVING</div><div class="token-number">#24</div></div>
+<div class="queue-stats"><div><strong>08</strong><span>Orders waiting</span></div><div><strong>12 min</strong><span>Avg. wait time</span></div></div>
+<div class="progress-label"><span>Queue load</span><span>Moderate</span></div><div class="queue-progress"><div></div></div>
+</div></div>
+</div></div></section>
+<section class="feature-section"><div class="container">
+<div class="section-heading"><span>HOW IT WORKS</span><h2>Everything you need in one place.</h2><p>From menu browsing to order collection, keep your canteen visit simple and predictable.</p></div>
+<div class="row g-4">
+<div class="col-md-4"><article class="feature-card"><div class="feature-icon">01</div><h3>Browse the menu</h3><p>See available food, prices, and preparation times before placing your order.</p><a href="{{ url_for('register') }}">Explore menu <span>→</span></a></article></div>
+<div class="col-md-4"><article class="feature-card"><div class="feature-icon">02</div><h3>Get your token</h3><p>Place your order and receive a digital token without waiting at the counter.</p><a href="{{ url_for('register') }}">Get started <span>→</span></a></article></div>
+<div class="col-md-4"><article class="feature-card"><div class="feature-icon">03</div><h3>Track your order</h3><p>Follow your order status and queue position until your food is ready.</p><a href="{{ url_for('register') }}">Create account <span>→</span></a></article></div>
+</div></div></section>
+<section class="stats-strip"><div class="container"><div class="row text-center g-4">
+<div class="col-6 col-lg-3"><strong>01</strong><span>Digital ordering</span></div>
+<div class="col-6 col-lg-3"><strong>02</strong><span>Unique token</span></div>
+<div class="col-6 col-lg-3"><strong>03</strong><span>Queue tracking</span></div>
+<div class="col-6 col-lg-3"><strong>04</strong><span>Admin control</span></div>
+</div></div></section>
 {% endblock %}
