@@ -33,9 +33,22 @@ def test_register_and_login(client):
     assert b"Registration successful" in response.data
     response=client.post("/login",data={"email":"student@example.com","password":"password123"},follow_redirects=True)
     assert response.status_code==200
-    assert b"Today's Menu" in response.data
+    assert b"Today's menu" in response.data
 
 def test_invalid_login(client):
     response=client.post("/login",data={"email":"wrong@example.com","password":"wrongpass"},follow_redirects=True)
     assert response.status_code==200
     assert b"Invalid email or password" in response.data
+
+def test_student_can_place_order_and_receive_token(client):
+    client.post("/register", data={"name":"Order Student", "email":"order@example.com", "password":"password123"})
+    client.post("/login", data={"email":"order@example.com", "password":"password123"})
+    response=client.post("/orders", data={"quantities":'{"1":2}'}, follow_redirects=True)
+    assert response.status_code==200
+    assert b"Order placed successfully" in response.data
+    assert b"Token #1001" in response.data
+
+def test_order_requires_login(client):
+    response=client.post("/orders", data={"quantities":'{"1":1}'}, follow_redirects=True)
+    assert response.status_code==200
+    assert b"Please log in" in response.data

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 import os
+import json
 from pathlib import Path
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -117,8 +118,55 @@ def menu():
         return redirect(url_for("login"))
     conn=get_db()
     items=conn.execute("SELECT * FROM menu ORDER BY id").fetchall()
+    orders=conn.execute("SELECT * FROM orders WHERE user_id=? ORDER BY id DESC LIMIT 8",
+                         (session["user_id"],)).fetchall()
     conn.close()
-    return render_template("menu.html",items=items)
+    return render_template("menu.html",items=items,orders=orders)
+
+@app.route("/orders", methods=["POST"])
+def place_order():
+    if "user_id" not in session:
+        flash("Please log in before placing an order.","warning")
+        return redirect(url_for("login"))
+    try:
+        quantities=json.loads(request.form.get("quantities", "{}"))
+    except (TypeError, ValueError):
+        flash("Your cart could not be read. Please try again.","danger")
+        return redirect(url_for("menu"))
+    if not isinstance(quantities, dict) or not quantities:
+        flash("Add at least one available item before checking out.","warning")
+        return redirect(url_for("menu"))
+    conn=get_db()
+    try:
+        selected=[]
+        total=0.0
+        for raw_id, raw_quantity in quantities.items():
+            try:
+                item_id=int(raw_id); quantity=int(raw_quantity)
+            except (TypeError, ValueError):
+                raise ValueError("Invalid cart quantity.")
+            if quantity < 1 or quantity > 50:
+                raise ValueError("Cart quantities must be between 1 and 50.")
+            item=conn.execute("SELECT id,item_name,price,available FROM menu WHERE id=?",(item_id,)).fetchone()
+            if item is None or not item["available"]:
+                raise ValueError("One of your selected items is no longer available.")
+            selected.append((item,quantity))
+            total += float(item["price"])*quantity
+        cursor=conn.execute("INSERT INTO orders (user_id,token,status,total) VALUES (?,?,?,?)",
+                            (session["user_id"],0,"WAITING",total))
+        order_id=cursor.lastrowid
+        token=1000+order_id
+        conn.execute("UPDATE orders SET token=? WHERE id=?",(token,order_id))
+        conn.executemany("INSERT INTO order_items (order_id,menu_id,quantity) VALUES (?,?,?)",
+                         [(order_id,item["id"],quantity) for item,quantity in selected])
+        conn.commit()
+        flash(f"Order placed successfully! Your pickup token is #{token}.","success")
+    except (ValueError, sqlite3.Error) as error:
+        conn.rollback()
+        flash(str(error) if isinstance(error,ValueError) else "We could not place your order. Please try again.","danger")
+    finally:
+        conn.close()
+    return redirect(url_for("menu"))
 
 @app.route("/admin")
 def admin():
