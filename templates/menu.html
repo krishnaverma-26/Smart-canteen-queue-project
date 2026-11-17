@@ -1,8 +1,72 @@
-{% extends "base.html" %}
-{% block title %}Menu{% endblock %}
-{% block content %}<div class="d-flex justify-content-between align-items-center mb-4">
-<div><h1 class="fw-bold">Today's Menu</h1><p class="text-muted mb-0">Choose your food. Ordering functionality is coming next.</p></div></div>
-<div class="row g-4">{% for item in items %}<div class="col-md-6 col-lg-4"><div class="card h-100 shadow-sm"><div class="card-body">
-<div class="d-flex justify-content-between"><h4>{{ item["item_name"] }}</h4>{% if item["available"] %}<span class="badge text-bg-success">Available</span>{% else %}<span class="badge text-bg-secondary">Unavailable</span>{% endif %}</div>
-<p class="fs-5 fw-bold mt-3">₹{{ "%.2f"|format(item["price"]) }}</p><p class="text-muted mb-0">Preparation: ~{{ item["preparation_time"] }} min</p>
-</div></div></div>{% endfor %}</div>{% endblock %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Campus Canteen | Menu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/canteen-dashboard.css') }}">
+</head>
+<body>
+<main class="canteen-shell">
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('menu') }}" aria-label="Smart Canteen home"><span class="brand-mark">✳</span><span>smart canteen<span class="brand-sub">CAMPUS FOOD, SIMPLIFIED</span></span></a>
+    <div class="sidebar-label">YOUR SPACE</div>
+    <nav class="side-nav" aria-label="Main navigation">
+      <a class="nav-link active" href="#menu"><span aria-hidden="true">▦</span> Menu <span class="nav-dot"></span></a>
+      <a class="nav-link" href="#orders" id="history-link"><span aria-hidden="true">▣</span> My orders</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-note"><span>✧</span><span>Good food, less waiting.<br><strong>That's the idea.</strong></span></div>
+      <div class="profile"><div class="avatar">{{ (session.get('user_name') or 'S')[0]|upper }}</div><div><strong>{{ session.get('user_name','Student') }}</strong><span>Student account</span></div><a class="icon-button" href="{{ url_for('logout') }}" aria-label="Log out" title="Log out">↗</a></div>
+    </div>
+  </aside>
+
+  <section class="main-column" id="home">
+    <header class="topbar"><div class="campus-switch"><span class="campus-indicator"></span> Campus Canteen <span aria-hidden="true">⌄</span></div>
+      <div class="topbar-actions"><span class="open-status"><span></span> READY FOR ORDERS</span><a class="icon-button notification" href="{{ url_for('logout') }}" aria-label="Log out" title="Log out">↗</a><button class="mobile-cart" id="mobile-cart" type="button" aria-label="View order" aria-expanded="false">Bag <span id="mobile-count">0</span></button></div>
+    </header>
+    <div class="content-area">
+      {% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}
+        <div class="dashboard-alert {{ 'alert-success' if category=='success' else 'alert-error' if category in ['danger','error'] else 'alert-info' }}" role="status">{{ message }}</div>
+      {% endfor %}{% endwith %}
+      <section class="welcome-row"><div><p class="eyebrow">YOUR CAMPUS, YOUR MENU <span class="sun-mark">✳</span></p><h1>Hey {{ session.get('user_name','there').split(' ')[0] }}, <span>what sounds good?</span></h1><p class="welcome-copy">A better lunch break is just a few taps away.</p></div>
+        <div class="today-stats"><div class="stat-icon">◷</div><div><span>Average prep time</span><strong>~{{ (items|map(attribute='preparation_time')|list|sum // (items|length)) if items else 0 }} <small>min</small></strong></div><span class="stat-trend">↘</span></div>
+      </section>
+      <section class="feature-card"><div class="feature-copy"><span class="feature-label">✧ TODAY'S PICK</span><h2>Fresh, feel-good<br>fuel for your day.</h2><p>Choose from the campus favourites, made fresh when you order.</p>
+        {% if items %}<button class="feature-button" type="button" data-feature-add="{{ items[0]['id'] }}">Add a favourite <span>→</span></button><span class="feature-price">₹{{ '%.2f'|format(items[0]['price']) }} <span>· {{ items[0]['preparation_time'] }} min prep</span></span>{% endif %}
+      </div><div class="feature-image"><img src="{{ url_for('static', filename='images/canteen-hero.png') }}" alt="Freshly prepared colourful canteen bowl"></div><span class="feature-sticker">MADE<br>FRESH<br><b>FOR YOU</b></span></section>
+
+      <section class="menu-section" id="menu"><div class="section-heading"><div><p class="eyebrow">THE GOOD STUFF</p><h2>Today's menu <span class="menu-count" id="visible-count">{{ items|length }}</span></h2></div><label class="search-box"><span aria-hidden="true">⌕</span><span class="sr-only">Search menu</span><input id="menu-search" type="search" placeholder="Find your favorite..."></label></div>
+        <div class="category-row" role="tablist" aria-label="Filter menu category"><button class="category-chip selected" type="button" data-category="all" aria-selected="true">Everything</button><button class="category-chip" type="button" data-category="food" aria-selected="false">Food</button><button class="category-chip" type="button" data-category="snacks" aria-selected="false">Snacks</button><button class="category-chip" type="button" data-category="drinks" aria-selected="false">Drinks</button></div>
+        <div class="menu-grid" id="menu-grid">
+          {% for item in items %}
+            {% set name=item['item_name']|lower %}
+            {% set category='drinks' if ('coffee' in name or 'tea' in name or 'juice' in name or 'drink' in name or 'shake' in name or 'lassi' in name) else 'snacks' if ('fries' in name or 'samosa' in name or 'roll' in name or 'maggi' in name or 'sandwich' in name) else 'food' %}
+            {% set tone=['sage','peach','gold','lavender','rose','mint'][loop.index0 % 6] %}
+            <article class="menu-card" data-menu-card data-id="{{ item['id'] }}" data-name="{{ item['item_name']|lower }}" data-category="{{ category }}" data-price="{{ item['price'] }}" data-available="{{ item['available'] }}">
+              <div class="dish-art {{ tone }}"><span class="dish-icon">{% if category=='drinks' %}☕{% elif category=='snacks' %}♨{% else %}✿{% endif %}</span>{% if loop.first %}<span class="dish-tag">Canteen pick</span>{% endif %}<div class="dish-orbit"></div></div>
+              <div class="dish-details"><div class="dish-title-row"><h3>{{ item['item_name'] }}</h3><strong>₹{{ '%.2f'|format(item['price']) }}</strong></div><p>{% if item['preparation_time'] %}Freshly prepared · {{ item['preparation_time'] }} min{% else %}Freshly prepared on order{% endif %}</p>
+                <div class="dish-footer"><span>◷ {{ item['preparation_time'] }} min</span>{% if item['available'] %}<button class="add-button" type="button" data-add="{{ item['id'] }}" aria-label="Add {{ item['item_name'] }} to order">＋</button>{% else %}<span class="unavailable-label">Unavailable</span>{% endif %}</div></div>
+            </article>
+          {% else %}<div class="no-results"><strong>No menu items yet</strong><span>Please check back later.</span></div>{% endfor %}
+        </div>
+        <div class="no-results" id="search-empty" hidden><strong>No dishes found</strong><span>Try a different search or category.</span></div>
+      </section>
+      <footer class="page-footer"><span>Made with care at your campus.</span><span>Questions? Find us at the counter →</span></footer>
+    </div>
+  </section>
+
+  <aside class="order-sidebar" id="orders"><button class="mobile-order-close" id="mobile-order-close" type="button" aria-label="Close order panel">×</button><div class="order-head"><div><span class="eyebrow">YOUR BREAK, YOUR WAY</span><h2>Your order <span id="cart-count">0</span></h2></div><button class="order-history" type="button" id="open-history">History →</button></div>
+    <div class="order-eta"><span class="eta-icon">◷</span><span>Pickup in <strong id="eta-time">~8 min</strong></span><span class="eta-divider"></span><span class="eta-open">Kitchen ready</span></div>
+    <div class="empty-order" id="empty-cart"><div class="empty-bag">▣</div><strong>Your order starts here</strong><span>Pick something delicious<br>from today's menu.</span></div>
+    <div class="cart-list" id="cart-list" aria-live="polite"></div>
+    <form class="order-bottom" id="checkout-form" method="post" action="{{ url_for('place_order') }}"><input type="hidden" name="quantities" id="cart-payload" value="{}"><div class="subtotal-row"><span>Subtotal</span><strong id="cart-subtotal">₹0.00</strong></div><div class="pickup-note"><span class="pickup-check">✓</span><span>Pay at pickup <small>· No extra fees</small></span></div><button class="checkout-button" id="checkout-button" type="submit" disabled><span id="checkout-label">Add items to continue</span><span id="checkout-total">→</span></button><p class="order-footnote">Your food is made fresh after you order.</p></form>
+  </aside>
+</main>
+
+<div class="modal-backdrop" id="history-modal" hidden><section class="history-modal" role="dialog" aria-modal="true" aria-labelledby="history-title"><button class="modal-close" type="button" id="close-history" aria-label="Close dialog">×</button><span class="eyebrow">YOUR CAMPUS ORDERS</span><h2 id="history-title">Order history</h2>
+  {% if orders %}{% for order in orders %}<div class="history-row"><span class="history-icon">▣</span><div><strong>Token #{{ order['token'] }}</strong><span>{{ order['created_at'] }} · {{ order['status']|title }}</span></div><span class="history-status">₹{{ '%.2f'|format(order['total']) }}</span></div>{% endfor %}{% else %}<div class="history-empty">Your recent orders will show up here.</div>{% endif %}
+  <button class="modal-done" type="button" id="done-history">Back to menu</button></section></div>
+<script src="{{ url_for('static', filename='js/canteen-dashboard.js') }}"></script>
+</body></html>
